@@ -52,49 +52,49 @@ export default function MessageHistory() {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200"></table>
-          <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Message
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Recipients
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Success Rate
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {messages.map((message) => (
-                <tr key={message.id}>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {new Date(message.createdAt).toLocaleDateString()} 
-                    {new Date(message.createdAt).toLocaleTimeString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="max-w-md overflow-hidden text-ellipsis">
-                      {message.content}
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {message.recipientCount}
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    <span className={message.successCount === message.recipientCount ? 
-                      "text-green-600" : "text-yellow-600"}>
-                      {message.successCount} / {message.recipientCount}
-                      ({Math.round((message.successCount / message.recipientCount) * 100)}%)
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <table className="min-w-full divide-y divide-gray-200">
+  <thead className="bg-gray-50">
+    <tr>
+      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+        Date
+      </th>
+      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+        Message
+      </th>
+      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+        Recipients
+      </th>
+      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+        Success Rate
+      </th>
+    </tr>
+  </thead>
+  <tbody className="divide-y divide-gray-200 bg-white">
+    {messages.map((message) => (
+      <tr key={message.id}>
+        <td className="whitespace-nowrap px-6 py-4">
+          {new Date(message.createdAt).toLocaleDateString()} 
+          {new Date(message.createdAt).toLocaleTimeString()}
+        </td>
+        <td className="px-6 py-4">
+          <div className="max-w-md overflow-hidden text-ellipsis">
+            {message.content}
+          </div>
+        </td>
+        <td className="whitespace-nowrap px-6 py-4">
+          {message.recipientCount}
+        </td>
+        <td className="whitespace-nowrap px-6 py-4">
+          <span className={message.successCount === message.recipientCount ? 
+            "text-green-600" : "text-yellow-600"}>
+            {message.successCount} / {message.recipientCount}
+            ({Math.round((message.successCount / message.recipientCount) * 100)}%)
+          </span>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
         </div>
       )}
     </div>
