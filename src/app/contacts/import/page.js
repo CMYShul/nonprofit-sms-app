@@ -19,12 +19,42 @@ export default function ImportContacts() {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile && selectedFile.type !== "text/csv") {
-      setMessage({ type: "error", text: "Please select a valid CSV file" });
-      setFile(null);
-    } else {
-      setFile(selectedFile);
-      setMessage({ type: "", text: "" });
+    
+    // More robust CSV validation
+    if (selectedFile) {
+      const fileName = selectedFile.name.toLowerCase();
+      const fileType = selectedFile.type;
+      
+      // Check if file has .csv extension or a valid CSV MIME type
+      const isCSV = 
+        fileName.endsWith('.csv') || 
+        fileType === 'text/csv' || 
+        fileType === 'application/csv' ||
+        fileType === 'application/vnd.ms-excel' ||
+        fileType === 'application/octet-stream';
+      
+      if (!isCSV) {
+        setMessage({ 
+          type: "error", 
+          text: "Please select a valid CSV file" 
+        });
+        setFile(null);
+        
+        // Log details for debugging
+        console.log("File rejected:", {
+          name: selectedFile.name,
+          type: selectedFile.type
+        });
+      } else {
+        setFile(selectedFile);
+        setMessage({ type: "", text: "" });
+        
+        // Log successful file selection
+        console.log("File accepted:", {
+          name: selectedFile.name,
+          type: selectedFile.type
+        });
+      }
     }
   };
 
@@ -41,6 +71,13 @@ export default function ImportContacts() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      
+      // Debug: log file details before upload
+      console.log("Uploading file:", {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
       
       const response = await fetch("/api/contacts/import", {
         method: "POST",
