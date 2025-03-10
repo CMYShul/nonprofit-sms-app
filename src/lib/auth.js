@@ -1,7 +1,7 @@
-import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth";
+// src/lib/auth.js
+import CredentialsProvider from "next-auth/providers/credentials";
 
-// Configuration object that will be passed to NextAuth
+// Authentication options configuration
 export const authOptions = {
   providers: [
     CredentialsProvider({
@@ -65,6 +65,3 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-const handler = NextAuth(authOptions);
-export { handler as GET, handler as POST };
