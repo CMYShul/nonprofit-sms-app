@@ -16,7 +16,8 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Analytics />
-        className={inter.className}
+      </body>
+      <body className={inter.className}>
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
