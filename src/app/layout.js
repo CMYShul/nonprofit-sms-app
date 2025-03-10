@@ -3,9 +3,10 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
-
 import { Analytics } from '@vercel/analytics/next';
- 
+
+const inter = Inter({ subsets: ["latin"] }); 
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
@@ -16,15 +17,6 @@ export default function RootLayout({ children }) {
         {children}
         <Analytics />
       </body>
-    </html>
-  );
-}
-
-const inter = Inter({ subsets: ["latin"] });
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en">
       <body className={inter.className}>
         <SessionProvider>{children}</SessionProvider>
       </body>
