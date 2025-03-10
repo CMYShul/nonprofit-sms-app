@@ -1,3 +1,4 @@
+// src/app/contacts/page.js
 "use client";
 
 import { useState, useEffect } from "react";
@@ -9,6 +10,7 @@ export default function Contacts() {
   const router = useRouter();
   const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState({ type: "", text: "" });
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -27,6 +29,31 @@ export default function Contacts() {
     } catch (error) {
       console.error("Error fetching contacts:", error);
       setIsLoading(false);
+      setMessage({ type: "error", text: "Failed to load contacts" });
+    }
+  };
+
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+      try {
+        const res = await fetch(`/api/contacts/${id}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to delete contact");
+        }
+
+        // Update the contacts list without reloading
+        setContacts(contacts.filter(contact => contact.id !== id));
+        setMessage({ type: "success", text: `${name} was deleted successfully` });
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setMessage({ type: "", text: "" }), 3000);
+      } catch (error) {
+        console.error("Error deleting contact:", error);
+        setMessage({ type: "error", text: error.message });
+      }
     }
   };
 
@@ -46,14 +73,30 @@ export default function Contacts() {
         </button>
       </header>
 
+      {message.text && (
+        <div className={`mb-4 rounded-lg p-4 ${
+          message.type === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+        }`}>
+          {message.text}
+        </div>
+      )}
+
       <div className="mb-6 flex justify-between">
         <h2 className="text-xl">{contacts.length} Total Contacts</h2>
-        <button
-          onClick={() => router.push("/contacts/add")}
-          className="rounded-lg bg-green-600 py-2 px-4 text-white hover:bg-green-700"
-        >
-          Add New Contact
-        </button>
+        <div className="space-x-2">
+          <button
+            onClick={() => router.push("/contacts/import")}
+            className="rounded-lg bg-purple-600 py-2 px-4 text-white hover:bg-purple-700"
+          >
+            Import CSV
+          </button>
+          <button
+            onClick={() => router.push("/contacts/add")}
+            className="rounded-lg bg-green-600 py-2 px-4 text-white hover:bg-green-700"
+          >
+            Add New Contact
+          </button>
+        </div>
       </div>
 
       {contacts.length === 0 ? (
@@ -105,11 +148,7 @@ export default function Contacts() {
                       Edit
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm("Are you sure you want to delete this contact?")) {
-                          // Add delete functionality
-                        }
-                      }}
+                      onClick={() => handleDelete(contact.id, contact.name)}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
