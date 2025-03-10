@@ -1,5 +1,5 @@
 import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth";
+import CredentialsProvider from "next-auth/providers/credentials";
 
 // Configuration object that will be passed to NextAuth
 export const authOptions = {
