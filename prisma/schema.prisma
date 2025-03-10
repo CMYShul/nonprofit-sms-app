@@ -33,3 +33,12 @@ model Message {
   failureCount   Int
   createdAt      DateTime @default(now())
 }
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
