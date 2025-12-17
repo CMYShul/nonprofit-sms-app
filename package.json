@@ -11,7 +11,7 @@
   "dependencies": {
     "@babel/runtime": "^7.27.1",
     "@prisma/client": "^6.4.1",
-    "next": "^15.5.7",
+    "next": "^15.5.9",
     "next-auth": "^4.24.12",
     "papaparse": "^5.5.2",
     "prisma": "^6.4.1",
