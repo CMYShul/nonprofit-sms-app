@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
 import { prisma } from "@/lib/prisma";
 
@@ -53,8 +53,7 @@ export async function POST(request) {
         name: row.name || row.fullname || "",
         email: row.email || "",
         phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
+        group: row.group || row.category || "General"
       };
       
       // Skip empty rows
