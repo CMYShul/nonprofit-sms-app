@@ -1,11 +1,12 @@
 // src/app/api/contacts/[id]/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // Get a single contact by ID
 export async function GET(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -31,7 +32,7 @@ export async function GET(request, { params }) {
 
 // Update a contact
 export async function PUT(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,7 +74,7 @@ export async function PUT(request, { params }) {
 
 // Delete a contact
 export async function DELETE(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
