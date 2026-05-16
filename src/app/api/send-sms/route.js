@@ -54,7 +54,7 @@ export async function POST(request) {
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
-        console.error(`Failed to send SMS to ${recipient.phoneNumber}:`, error);
+        console.error("Failed to send SMS to recipient:", error);
         // Security Enhancement: Sanitize error messages to avoid leaking Twilio internal details
         results.push({
           success: false,
@@ -71,7 +71,8 @@ export async function POST(request) {
         sentBy: session.user?.email || "unknown",
         recipientCount: recipients.length,
         successCount: results.filter(r => r.success).length,
-        failureCount: results.filter(r => !r.success).length
+        failureCount: results.filter(r => !r.success).length,
+        userId: session.user.id
       }
     });
     

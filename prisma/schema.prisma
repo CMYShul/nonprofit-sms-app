@@ -20,7 +20,7 @@ model Contact {
   phoneNumber String
   email       String?
   group       String   @default("Default")
-  userId      String
+  userId      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -32,5 +32,6 @@ model Message {
   recipientCount Int
   successCount   Int
   failureCount   Int
+  userId         String?
   createdAt      DateTime @default(now())
 }

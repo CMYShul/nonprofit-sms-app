@@ -12,6 +12,7 @@ export async function GET() {
   
   try {
     const messages = await prisma.message.findMany({
+      where: { userId: session.user.id },
       orderBy: { createdAt: "desc" }
     });
     
