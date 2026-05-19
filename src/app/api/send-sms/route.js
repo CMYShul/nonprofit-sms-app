@@ -55,7 +55,8 @@ export async function POST(request) {
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         // Security: Sanitize error response to prevent information leakage
-        console.error(`Failed to send SMS to ${recipient.phoneNumber}:`, error);
+        // and avoid logging user-provided data (PII) to prevent log injection
+        console.error("Failed to send SMS to a recipient:", error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
