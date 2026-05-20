@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import twilio from "twilio";
 
@@ -8,8 +9,11 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+const MAX_RECIPIENTS = 50;
+const MAX_MESSAGE_LENGTH = 1000;
+
 export async function POST(request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,6 +24,14 @@ export async function POST(request) {
     
     if (!message || !recipients || !recipients.length) {
       return NextResponse.json({ error: "Message and recipients are required" }, { status: 400 });
+    }
+
+    if (recipients.length > MAX_RECIPIENTS) {
+      return NextResponse.json({ error: `Maximum ${MAX_RECIPIENTS} recipients allowed per request` }, { status: 400 });
+    }
+
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json({ error: `Message content exceeds ${MAX_MESSAGE_LENGTH} characters` }, { status: 400 });
     }
     
     const results = [];
@@ -44,10 +56,11 @@ export async function POST(request) {
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
+        console.error(`Failed to send SMS to ${recipient.phoneNumber}:`, error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
-          error: error.message
+          error: "Failed to send SMS"
         });
       }
     }
