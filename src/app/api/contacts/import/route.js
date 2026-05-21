@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -49,10 +49,16 @@ export async function POST(request) {
     for (const row of data) {
       // Map CSV fields to your contact model
       // Adjust field names based on your CSV structure
+      // Normalize phone number format
+      let phoneNumber = row.phone || row.phonenumber || row.mobile || "";
+      if (phoneNumber) {
+        phoneNumber = phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
+      }
+
       const contact = {
         name: row.name || row.fullname || "",
         email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
+        phoneNumber: phoneNumber,
         group: row.group || row.category || "General",
         userId: session.user.id
       };
