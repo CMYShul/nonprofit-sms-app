@@ -44,10 +44,11 @@ export async function POST(request) {
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
+        console.error("Failed to send SMS to recipient:", error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
-          error: error.message
+          error: "Failed to send SMS"
         });
       }
     }
