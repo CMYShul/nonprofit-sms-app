@@ -1,21 +1,22 @@
 // src/app/api/contacts/[id]/route.js
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
 // Get a single contact by ID
 export async function GET(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
-    const contact = await prisma.contact.findUnique({
-      where: { id }
+    const contact = await prisma.contact.findFirst({
+      where: { id, userId: session.user.id }
     });
     
     if (!contact) {
@@ -31,13 +32,13 @@ export async function GET(request, { params }) {
 
 // Update a contact
 export async function PUT(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const { name, phoneNumber, email, group } = await request.json();
@@ -49,8 +50,9 @@ export async function PUT(request, { params }) {
     // Normalize phone number format
     const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
-    const updatedContact = await prisma.contact.update({
-      where: { id },
+    // Use updateMany to ensure user owns the contact
+    const updateResult = await prisma.contact.updateMany({
+      where: { id, userId: session.user.id },
       data: {
         name,
         phoneNumber: normalizedPhone,
@@ -59,6 +61,14 @@ export async function PUT(request, { params }) {
       }
     });
     
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: "Contact not found or unauthorized" }, { status: 404 });
+    }
+
+    const updatedContact = await prisma.contact.findUnique({
+      where: { id }
+    });
+
     return NextResponse.json(updatedContact);
   } catch (error) {
     console.error("Error updating contact:", error);
@@ -73,19 +83,23 @@ export async function PUT(request, { params }) {
 
 // Delete a contact
 export async function DELETE(request, { params }) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
-    await prisma.contact.delete({
-      where: { id }
+    const deleteResult = await prisma.contact.deleteMany({
+      where: { id, userId: session.user.id }
     });
     
+    if (deleteResult.count === 0) {
+      return NextResponse.json({ error: "Contact not found or unauthorized" }, { status: 404 });
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting contact:", error);

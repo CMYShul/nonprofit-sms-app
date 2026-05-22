@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import twilio from "twilio";
 
@@ -9,7 +10,7 @@ const twilioClient = twilio(
 );
 
 export async function POST(request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -44,10 +45,11 @@ export async function POST(request) {
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
+        console.error(`Failed to send SMS to ${recipient.phoneNumber}:`, error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
-          error: error.message
+          error: "Failed to send SMS"
         });
       }
     }
@@ -57,6 +59,7 @@ export async function POST(request) {
       data: {
         content: message,
         sentBy: session.user?.email || "unknown",
+        userId: session.user.id,
         recipientCount: recipients.length,
         successCount: results.filter(r => r.success).length,
         failureCount: results.filter(r => !r.success).length
