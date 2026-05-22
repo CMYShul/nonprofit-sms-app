@@ -5,7 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function Dashboard() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [contacts, setContacts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

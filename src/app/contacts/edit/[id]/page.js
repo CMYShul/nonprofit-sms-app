@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 
 export default function EditContact() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
   const contactId = params.id;

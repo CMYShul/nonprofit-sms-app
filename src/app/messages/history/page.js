@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function MessageHistory() {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
