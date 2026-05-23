@@ -1,0 +1,4 @@
+## 2025-05-22 - [Harden SMS API & Fix Build]
+**Vulnerability:** The SMS sending endpoint lacked input validation (DoS/abuse risk) and leaked raw Twilio error messages (information leakage). Additionally, `getServerSession` was used without `authOptions`, and a broken import in the contact import API caused production build failures.
+**Learning:** Next.js 16/Turbopack is strict about static exports. Attempting to import `authOptions` from a route handler where it is not exported will break the build. Centralizing `authOptions` in a dedicated library file (`src/lib/auth.js`) is essential for both security consistency and build stability.
+**Prevention:** Always pass `authOptions` to `getServerSession` in API routes. Enforce strict limits on resource-intensive operations (like SMS) and sanitize all external API responses before returning them to the client.
