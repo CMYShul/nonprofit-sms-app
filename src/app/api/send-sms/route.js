@@ -23,9 +23,6 @@ export async function POST(request) {
       return NextResponse.json({ error: "Message and recipients are required" }, { status: 400 });
     }
 
-    if (recipients.length > 50) {
-      return NextResponse.json({ error: "Too many recipients (limit: 50)" }, { status: 400 });
-    }
 
     if (message.length > 1000) {
       return NextResponse.json({ error: "Message too long (limit: 1000 characters)" }, { status: 400 });

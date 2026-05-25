@@ -53,7 +53,8 @@ export async function POST(request) {
         name: row.name || row.fullname || "",
         email: row.email || "",
         phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General"
+        group: row.group || row.category || "General",
+        userId: session.user.id
       };
       
       // Skip empty rows
