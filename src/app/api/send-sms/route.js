@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import twilio from "twilio";
+
+const MAX_RECIPIENTS = 50;
+const MAX_MESSAGE_LENGTH = 1000;
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
@@ -9,7 +13,7 @@ const twilioClient = twilio(
 );
 
 export async function POST(request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,6 +24,22 @@ export async function POST(request) {
     
     if (!message || !recipients || !recipients.length) {
       return NextResponse.json({ error: "Message and recipients are required" }, { status: 400 });
+    }
+
+    // Security: Limit number of recipients to prevent resource exhaustion
+    if (recipients.length > MAX_RECIPIENTS) {
+      return NextResponse.json(
+        { error: `Too many recipients. Maximum allowed is ${MAX_RECIPIENTS}.` },
+        { status: 400 }
+      );
+    }
+
+    // Security: Limit message length
+    if (message.length > MAX_MESSAGE_LENGTH) {
+      return NextResponse.json(
+        { error: `Message too long. Maximum allowed is ${MAX_MESSAGE_LENGTH} characters.` },
+        { status: 400 }
+      );
     }
     
     const results = [];
@@ -44,10 +64,13 @@ export async function POST(request) {
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
+        // Log the actual error internally, but don't leak it to the client
+        // PII (phone number) is logged separately from the error message
+        console.error("Twilio error for recipient", error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
-          error: error.message
+          error: "Failed to send SMS"
         });
       }
     }
