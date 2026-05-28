@@ -19,13 +19,17 @@ export async function POST(request) {
   try {
     const { message, recipients } = await request.json();
     
-    if (!message || !recipients || !recipients.length) {
-      return NextResponse.json({ error: "Message and recipients are required" }, { status: 400 });
+    if (!message || !recipients || !Array.isArray(recipients) || !recipients.length) {
+      return NextResponse.json({ error: "Message and a valid list of recipients are required" }, { status: 400 });
     }
 
 
     if (message.length > 1000) {
       return NextResponse.json({ error: "Message too long (limit: 1000 characters)" }, { status: 400 });
+    }
+
+    if (recipients.length > 50) {
+      return NextResponse.json({ error: "Too many recipients (limit: 50)" }, { status: 400 });
     }
     
     const results = [];
@@ -49,7 +53,8 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch (error) {
+        console.error("SMS error:", error);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
