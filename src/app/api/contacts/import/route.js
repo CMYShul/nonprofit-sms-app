@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,7 +25,7 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
+
     // Read the file as text
     const csvText = await file.text();
     
@@ -42,6 +42,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit the number of contacts to import in a single request to prevent DoS
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many contacts (limit: 100 per import)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
@@ -53,8 +61,7 @@ export async function POST(request) {
         name: row.name || row.fullname || "",
         email: row.email || "",
         phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
+        group: row.group || row.category || "General"
       };
       
       // Skip empty rows

@@ -19,8 +19,13 @@ export async function POST(request) {
   try {
     const { message, recipients } = await request.json();
     
-    if (!message || !recipients || !recipients.length) {
+    if (!message || !recipients || !Array.isArray(recipients) || !recipients.length) {
       return NextResponse.json({ error: "Message and recipients are required" }, { status: 400 });
+    }
+
+    // Limit the number of recipients per request to prevent abuse and resource exhaustion
+    if (recipients.length > 50) {
+      return NextResponse.json({ error: "Too many recipients (limit: 50 per request)" }, { status: 400 });
     }
 
 
@@ -49,7 +54,7 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch {
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
