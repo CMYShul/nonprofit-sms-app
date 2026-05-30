@@ -42,6 +42,13 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many contacts (limit: 100 per import)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
@@ -53,8 +60,8 @@ export async function POST(request) {
         name: row.name || row.fullname || "",
         email: row.email || "",
         phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
+        group: row.group || row.category || "General"
+        // Note: userId is excluded because the Contact model currently lacks a userId field
       };
       
       // Skip empty rows
