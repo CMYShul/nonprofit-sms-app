@@ -12,6 +12,7 @@ export async function GET() {
   
   try {
     const contacts = await prisma.contact.findMany({
+      where: { userId: session.user.id },
       orderBy: { name: "asc" }
     });
     
@@ -37,14 +38,15 @@ export async function POST(request) {
     }
     
     // Normalize phone number format
-    const normalizedPhone = phoneNumber.replace(/\D/g, "");
+    const normalizedPhone = phoneNumber.startsWith("+") ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
     const contact = await prisma.contact.create({
       data: {
         name,
-        phoneNumber: normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`,
+        phoneNumber: normalizedPhone,
         email: email || null,
-        group: group || "Default"
+        group: group || "Default",
+        userId: session.user.id
       }
     });
     
