@@ -63,6 +63,7 @@ export async function POST(request) {
       data: {
         content: message,
         sentBy: session.user?.email || "unknown",
+        userId: session.user.id,
         recipientCount: recipients.length,
         successCount: results.filter(r => r.success).length,
         failureCount: results.filter(r => !r.success).length
