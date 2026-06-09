@@ -59,7 +59,8 @@ export async function POST(request) {
         await new Promise(resolve => setTimeout(resolve, 100));
       } catch (error) {
         // Log the internal error for debugging but return generic message
-        console.error(`Failed to send SMS to ${recipient.phoneNumber}:`, error.message);
+        // Use a static format string to prevent log injection
+        console.error("Failed to send SMS to recipient:", recipient.phoneNumber, error.message);
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
