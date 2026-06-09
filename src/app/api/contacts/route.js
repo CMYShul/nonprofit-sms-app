@@ -12,6 +12,8 @@ export async function GET() {
   
   try {
     const contacts = await prisma.contact.findMany({
+      // Scope to the authenticated user
+      where: { userId: session.user.id },
       orderBy: { name: "asc" }
     });
     
@@ -44,7 +46,9 @@ export async function POST(request) {
         name,
         phoneNumber: normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`,
         email: email || null,
-        group: group || "Default"
+        group: group || "Default",
+        // Associate contact with the authenticated user
+        userId: session.user.id
       }
     });
     

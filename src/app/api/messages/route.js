@@ -12,6 +12,8 @@ export async function GET() {
   
   try {
     const messages = await prisma.message.findMany({
+      // Scope history to the authenticated user
+      where: { userId: session.user.id },
       orderBy: { createdAt: "desc" }
     });
     
