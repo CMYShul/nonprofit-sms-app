@@ -11,12 +11,14 @@ export async function GET(request, { params }) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
-  const { id } = params;
+
+  // In Next.js 16, params is a Promise and must be awaited
+  const { id } = await params;
   
   try {
-    const contact = await prisma.contact.findUnique({
-      where: { id }
+    const contact = await prisma.contact.findFirst({
+      // Enforce ownership: only return contact if it belongs to the authenticated user
+      where: { id, userId: session.user.id }
     });
     
     if (!contact) {
@@ -38,7 +40,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const { name, phoneNumber, email, group } = await request.json();
@@ -50,8 +52,9 @@ export async function PUT(request, { params }) {
     // Normalize phone number format
     const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
-    const updatedContact = await prisma.contact.update({
-      where: { id },
+    // Use updateMany to enforce ownership (Prisma update requires unique identifier in where)
+    const updateResult = await prisma.contact.updateMany({
+      where: { id, userId: session.user.id },
       data: {
         name,
         phoneNumber: normalizedPhone,
@@ -60,14 +63,15 @@ export async function PUT(request, { params }) {
       }
     });
     
+    if (updateResult.count === 0) {
+      return NextResponse.json({ error: "Contact not found or unauthorized" }, { status: 404 });
+    }
+
+    const updatedContact = await prisma.contact.findUnique({ where: { id } });
+
     return NextResponse.json(updatedContact);
   } catch (error) {
     console.error("Error updating contact:", error);
-    
-    if (error.code === "P2025") {
-      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
-    }
-    
     return NextResponse.json({ error: "Failed to update contact" }, { status: 500 });
   }
 }
@@ -80,21 +84,21 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
-    await prisma.contact.delete({
-      where: { id }
+    // Use deleteMany to enforce ownership
+    const deleteResult = await prisma.contact.deleteMany({
+      where: { id, userId: session.user.id }
     });
+
+    if (deleteResult.count === 0) {
+      return NextResponse.json({ error: "Contact not found or unauthorized" }, { status: 404 });
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting contact:", error);
-    
-    if (error.code === "P2025") {
-      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
-    }
-    
     return NextResponse.json({ error: "Failed to delete contact" }, { status: 500 });
   }
 }
