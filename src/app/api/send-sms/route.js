@@ -27,6 +27,10 @@ export async function POST(request) {
     if (message.length > 1000) {
       return NextResponse.json({ error: "Message too long (limit: 1000 characters)" }, { status: 400 });
     }
+
+    if (recipients.length > 50) {
+      return NextResponse.json({ error: "Too many recipients (limit: 50)" }, { status: 400 });
+    }
     
     const results = [];
     
@@ -49,7 +53,7 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch {
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
@@ -63,6 +67,7 @@ export async function POST(request) {
       data: {
         content: message,
         sentBy: session.user?.email || "unknown",
+        userId: session.user.id,
         recipientCount: recipients.length,
         successCount: results.filter(r => r.success).length,
         failureCount: results.filter(r => !r.success).length
