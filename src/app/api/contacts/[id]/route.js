@@ -15,8 +15,11 @@ export async function GET(request, { params }) {
   const { id } = params;
   
   try {
-    const contact = await prisma.contact.findUnique({
-      where: { id }
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id,
+        userId: session.user.id
+      }
     });
     
     if (!contact) {
@@ -47,6 +50,15 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Name and phone number are required" }, { status: 400 });
     }
     
+    // Check ownership before update
+    const contact = await prisma.contact.findFirst({
+      where: { id, userId: session.user.id }
+    });
+
+    if (!contact) {
+      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+    }
+
     // Normalize phone number format
     const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
@@ -83,6 +95,15 @@ export async function DELETE(request, { params }) {
   const { id } = params;
   
   try {
+    // Check ownership before delete
+    const contact = await prisma.contact.findFirst({
+      where: { id, userId: session.user.id }
+    });
+
+    if (!contact) {
+      return NextResponse.json({ error: "Contact not found" }, { status: 404 });
+    }
+
     await prisma.contact.delete({
       where: { id }
     });
