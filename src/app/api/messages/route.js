@@ -6,12 +6,13 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   const session = await getServerSession(authOptions);
   
-  if (!session) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
   try {
     const messages = await prisma.message.findMany({
+      where: { userId: session.user.id },
       orderBy: { createdAt: "desc" }
     });
     
