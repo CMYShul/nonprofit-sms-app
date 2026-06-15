@@ -16,6 +16,7 @@ datasource db {
 
 model Contact {
   id          String   @id @default(cuid())
+  userId      String   @default("1")
   name        String
   phoneNumber String
   email       String?
@@ -26,6 +27,7 @@ model Contact {
 
 model Message {
   id             String   @id @default(cuid())
+  userId         String   @default("1")
   content        String
   sentBy         String
   recipientCount Int
