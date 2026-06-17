@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -19,9 +19,17 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     
-    if (!file) {
+    if (!file || typeof file === "string") {
       return NextResponse.json(
         { error: "No file uploaded" }, 
+        { status: 400 }
+      );
+    }
+
+    // Limit file size to 1MB to prevent DoS
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds 1MB limit" },
         { status: 400 }
       );
     }
