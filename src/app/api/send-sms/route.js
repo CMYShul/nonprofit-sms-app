@@ -61,6 +61,7 @@ export async function POST(request) {
     // Log the message to the database
     await prisma.message.create({
       data: {
+        userId: session.user.id,
         content: message,
         sentBy: session.user?.email || "unknown",
         recipientCount: recipients.length,

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit file size to 1MB to prevent DoS
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (limit: 1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,11 +50,15 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit import to 100 contacts to prevent DoS/resource exhaustion
+    const importLimit = 100;
+    const recordsToImport = data.slice(0, importLimit);
     
     // Process and insert contacts
     const createdContacts = [];
     
-    for (const row of data) {
+    for (const row of recordsToImport) {
       // Map CSV fields to your contact model
       // Adjust field names based on your CSV structure
       const contact = {
