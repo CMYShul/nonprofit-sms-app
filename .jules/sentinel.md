@@ -4,3 +4,8 @@
 **Vulnerability:** The `/api/send-sms` endpoint was leaking raw Twilio error messages to the client and lacked any validation on the number of recipients or message length.
 **Learning:** API endpoints that interface with paid third-party services (like Twilio) are high-value targets for abuse. Without input limits, they can be used for DoS or to rack up large bills.
 **Prevention:** Always implement strict input validation (length, count) and return generic error messages to the client while logging details internally.
+
+## 2025-05-12 - IDOR and Lack of Multi-Tenancy in Core API
+**Vulnerability:** The application lacked data isolation, allowing any authenticated user to view, edit, or delete any contact or message history by simply knowing the record ID (IDOR).
+**Learning:** Even internal tools need multi-tenancy. Using default values for `userId` in the schema during migration helps maintain existing data while transitioning to a secure model.
+**Prevention:** Always scope database queries to the authenticated user's ID. In Next.js 16, ensure `params` is awaited in route handlers to avoid synchronization issues that could lead to logic errors.

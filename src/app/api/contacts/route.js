@@ -11,7 +11,9 @@ export async function GET() {
   }
   
   try {
+    const userId = session.user.id || "1";
     const contacts = await prisma.contact.findMany({
+      where: { userId },
       orderBy: { name: "asc" }
     });
     
@@ -38,9 +40,11 @@ export async function POST(request) {
     
     // Normalize phone number format
     const normalizedPhone = phoneNumber.replace(/\D/g, "");
+    const userId = session.user.id || "1";
     
     const contact = await prisma.contact.create({
       data: {
+        userId,
         name,
         phoneNumber: normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`,
         email: email || null,

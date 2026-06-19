@@ -49,7 +49,7 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch {
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
@@ -59,8 +59,10 @@ export async function POST(request) {
     }
     
     // Log the message to the database
+    const userId = session.user.id || "1";
     await prisma.message.create({
       data: {
+        userId,
         content: message,
         sentBy: session.user?.email || "unknown",
         recipientCount: recipients.length,
