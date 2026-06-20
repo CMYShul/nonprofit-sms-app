@@ -12,6 +12,7 @@ export async function GET() {
   
   try {
     const contacts = await prisma.contact.findMany({
+      where: { userId: session.user.id },
       orderBy: { name: "asc" }
     });
     
@@ -41,6 +42,7 @@ export async function POST(request) {
     
     const contact = await prisma.contact.create({
       data: {
+        userId: session.user.id,
         name,
         phoneNumber: normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`,
         email: email || null,

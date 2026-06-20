@@ -12,11 +12,13 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const contact = await prisma.contact.findUnique({
-      where: { id }
+      where: {
+        id_userId: { id, userId: session.user.id }
+      }
     });
     
     if (!contact) {
@@ -38,7 +40,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const { name, phoneNumber, email, group } = await request.json();
@@ -51,7 +53,9 @@ export async function PUT(request, { params }) {
     const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
     const updatedContact = await prisma.contact.update({
-      where: { id },
+      where: {
+        id_userId: { id, userId: session.user.id }
+      },
       data: {
         name,
         phoneNumber: normalizedPhone,
@@ -80,11 +84,13 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     await prisma.contact.delete({
-      where: { id }
+      where: {
+        id_userId: { id, userId: session.user.id }
+      }
     });
     
     return NextResponse.json({ success: true });
