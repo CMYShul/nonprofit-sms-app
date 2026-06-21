@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
+
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const MAX_ROWS = 100;
 
 export async function POST(request) {
   try {
@@ -25,6 +28,13 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "File too large (limit: 1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -39,6 +49,13 @@ export async function POST(request) {
     if (!data || data.length === 0) {
       return NextResponse.json(
         { error: "CSV file is empty or invalid" }, 
+        { status: 400 }
+      );
+    }
+
+    if (data.length > MAX_ROWS) {
+      return NextResponse.json(
+        { error: `Too many rows (limit: ${MAX_ROWS})` },
         { status: 400 }
       );
     }
