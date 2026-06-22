@@ -49,7 +49,7 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch {
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
@@ -63,6 +63,7 @@ export async function POST(request) {
       data: {
         content: message,
         sentBy: session.user?.email || "unknown",
+        userId: session.user.id,
         recipientCount: recipients.length,
         successCount: results.filter(r => r.success).length,
         failureCount: results.filter(r => !r.success).length
