@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit file size to 1MB to prevent DoS
+    if (file.size > 1 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (limit: 1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,23 +50,35 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit number of rows to 100 to prevent resource exhaustion
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many rows (limit: 100)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
     
     for (const row of data) {
       // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
+      const rawPhone = row.phone || row.phonenumber || row.mobile || "";
+
+      // Normalize phone number: remove all non-digits and prepend +
+      const digitsOnly = rawPhone.replace(/\D/g, "");
+      const normalizedPhone = digitsOnly ? `+${digitsOnly}` : "";
+
       const contact = {
         name: row.name || row.fullname || "",
         email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
+        phoneNumber: normalizedPhone,
+        group: row.group || row.category || "General"
       };
       
-      // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      // Skip rows missing required data
+      if (!contact.name || !contact.phoneNumber) {
         continue;
       }
       
