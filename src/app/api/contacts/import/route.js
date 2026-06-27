@@ -19,6 +19,14 @@ export async function POST(request) {
     const formData = await request.formData();
     const file = formData.get("file");
     
+    // Security: Limit file size to 1MB to prevent DoS
+    if (file && file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds 1MB limit" },
+        { status: 400 }
+      );
+    }
+
     if (!file) {
       return NextResponse.json(
         { error: "No file uploaded" }, 
@@ -42,29 +50,44 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Security: Limit number of rows to prevent resource exhaustion
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many rows (limit: 100)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
     
     for (const row of data) {
       // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
-      
+      const name = (row.name || row.fullname || "").substring(0, 100);
+      const email = (row.email || "").substring(0, 255);
+      const rawPhone = row.phone || row.phonenumber || row.mobile || "";
+      const group = (row.group || row.category || "General").substring(0, 50);
+
       // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      if (!name && !rawPhone) {
         continue;
       }
+
+      // Normalize phone number format (E.164-like)
+      const digitsOnly = rawPhone.replace(/\D/g, "");
+      if (!digitsOnly) continue;
+
+      const contactData = {
+        name,
+        email: email || null,
+        phoneNumber: `+${digitsOnly}`,
+        group: group
+      };
       
       // Create contact in database
       const createdContact = await prisma.contact.create({
-        data: contact
+        data: contactData
       });
       
       createdContacts.push(createdContact);

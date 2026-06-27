@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { useParams } from "next/navigation";
 
 export default function EditContact() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const params = useParams();
   const contactId = params.id;
@@ -23,35 +23,35 @@ export default function EditContact() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const fetchContact = async () => {
+      try {
+        const res = await fetch(`/api/contacts/${contactId}`);
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch contact");
+        }
+
+        const contact = await res.json();
+        setFormData({
+          name: contact.name,
+          phoneNumber: contact.phoneNumber,
+          email: contact.email || "",
+          group: contact.group
+        });
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching contact:", error);
+        setError("Failed to load contact information");
+        setIsLoading(false);
+      }
+    };
+
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (status === "authenticated" && contactId) {
       fetchContact();
     }
   }, [status, router, contactId]);
-
-  const fetchContact = async () => {
-    try {
-      const res = await fetch(`/api/contacts/${contactId}`);
-      
-      if (!res.ok) {
-        throw new Error("Failed to fetch contact");
-      }
-      
-      const contact = await res.json();
-      setFormData({
-        name: contact.name,
-        phoneNumber: contact.phoneNumber,
-        email: contact.email || "",
-        group: contact.group
-      });
-      setIsLoading(false);
-    } catch (error) {
-      console.error("Error fetching contact:", error);
-      setError("Failed to load contact information");
-      setIsLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
