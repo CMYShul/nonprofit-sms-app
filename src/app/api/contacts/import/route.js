@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Enforce 1MB file size limit to prevent Denial-of-Service (DoS)
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (limit: 1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,6 +50,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Enforce 100-row limit to prevent Denial-of-Service (DoS)
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many rows (limit: 100)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
@@ -54,7 +70,6 @@ export async function POST(request) {
         email: row.email || "",
         phoneNumber: row.phone || row.phonenumber || row.mobile || "",
         group: row.group || row.category || "General",
-        userId: session.user.id
       };
       
       // Skip empty rows
