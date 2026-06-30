@@ -49,7 +49,7 @@ export async function POST(request) {
         
         // Add a small delay between sends to avoid rate limits
         await new Promise(resolve => setTimeout(resolve, 100));
-      } catch (_error) {
+      } catch {
         results.push({
           success: false,
           phoneNumber: recipient.phoneNumber,
