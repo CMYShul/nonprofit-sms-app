@@ -1,0 +1,68 @@
+
+> nonprofit-sms-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.2:3000
+✓ Ready in 598ms
+
+○ Compiling /login ...
+ GET /login 200 in 3.7s (next.js: 3.4s, application-code: 329ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary name="login/" loading={null}>
+        <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+          <RedirectBoundary>
+            <RedirectErrorBoundary router={{...}}>
+              <InnerLayoutRouter url="/login" tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} segmentPath={[...]} ...>
+                <SegmentViewNode type="page" pagePath="src/login/...">
+                  <SegmentTrieNode>
+                  <ClientPageRoot Component={function Login} serverProvidedParams={{...}}>
+                    <Login params={Promise} searchParams={Promise}>
+                      <div className="flex min-h...">
+                        <div className="w-full max...">
+                          <h1>
+                          <form onSubmit={function handleSubmit}>
+                            <div className="mb-4">
+                              <label>
+                              <input
+                                id="username"
+                                type="text"
+                                value=""
+                                onChange={function onChange}
+                                className="mt-1 w-full rounded-lg border p-2"
+                                required={true}
+-                               style={{caret-color:"transparent"}}
+                              >
+                            <div className="mb-6">
+                              <label>
+                              <input
+                                id="password"
+                                type="password"
+                                value=""
+                                onChange={function onChange}
+                                className="mt-1 w-full rounded-lg border p-2"
+                                required={true}
+-                               style={{caret-color:"transparent"}}
+                              >
+                            ...
+                ...
+              ...
+
+[next-auth][warn][NEXTAUTH_URL]
+https://next-auth.js.org/warnings#nextauth_url
+[next-auth][warn][NO_SECRET]
+https://next-auth.js.org/warnings#no_secret
