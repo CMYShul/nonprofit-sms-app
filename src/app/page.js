@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { data: session, status } = useSession();
+  /* eslint-disable @typescript-eslint/no-unused-vars */ const { data: session, status } = useSession();
   const router = useRouter();
   
   useEffect(() => {

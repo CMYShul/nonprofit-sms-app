@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function AddContact() {
-  const { data: session, status } = useSession();
+  /* eslint-disable @typescript-eslint/no-unused-vars */ const { data: session, status } = useSession();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
