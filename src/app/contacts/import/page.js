@@ -6,7 +6,7 @@ import { useSession } from "next-auth/react";
 
 export default function ImportContacts() {
   const router = useRouter();
-  const { status } = useSession();
+  /* eslint-disable @typescript-eslint/no-unused-vars */ const { data: session, status } = useSession();
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
