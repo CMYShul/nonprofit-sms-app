@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit file size to 1MB
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File too large (limit: 1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,37 +50,59 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit the number of rows to process
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Too many rows (limit: 100 contacts per import)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
-    const createdContacts = [];
+    const contactsToCreate = [];
     
     for (const row of data) {
       // Map CSV fields to your contact model
       // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
-      
+      const rawName = (row.name || row.fullname || "").trim();
+      const rawPhone = (row.phone || row.phonenumber || row.mobile || "").trim();
+      const rawEmail = (row.email || "").trim();
+      const rawGroup = (row.group || row.category || "General").trim();
+
       // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      if (!rawName && !rawPhone) {
         continue;
       }
-      
-      // Create contact in database
-      const createdContact = await prisma.contact.create({
-        data: contact
+
+      // Normalize phone number format
+      const hasPlus = rawPhone.startsWith("+");
+      const digitsOnly = rawPhone.replace(/\D/g, "");
+      const finalPhone = digitsOnly ? (hasPlus ? `+${digitsOnly}` : `+${digitsOnly}`) : "";
+
+      contactsToCreate.push({
+        name: rawName.slice(0, 100),
+        email: rawEmail ? rawEmail.slice(0, 255) : null,
+        phoneNumber: finalPhone.slice(0, 50),
+        group: rawGroup.slice(0, 50)
       });
-      
-      createdContacts.push(createdContact);
     }
+
+    if (contactsToCreate.length === 0) {
+      return NextResponse.json(
+        { error: "No valid contacts found in CSV" },
+        { status: 400 }
+      );
+    }
+
+    // Bulk create contacts for efficiency and to reduce database load
+    const { count } = await prisma.contact.createMany({
+      data: contactsToCreate
+    });
     
     return NextResponse.json({
-      message: `Successfully imported ${createdContacts.length} contacts`,
-      count: createdContacts.length
+      message: `Successfully imported ${count} contacts`,
+      count
     });
     
   } catch (error) {
