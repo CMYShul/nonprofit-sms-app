@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Security: Limit file size to 1MB
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds 1MB limit" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,37 +50,56 @@ export async function POST(request) {
         { status: 400 }
       );
     }
-    
-    // Process and insert contacts
-    const createdContacts = [];
-    
-    for (const row of data) {
-      // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
-      
-      // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
-        continue;
-      }
-      
-      // Create contact in database
-      const createdContact = await prisma.contact.create({
-        data: contact
-      });
-      
-      createdContacts.push(createdContact);
+
+    // Security: Limit number of rows to 100 to prevent DoS
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "CSV exceeds 100-row import limit" },
+        { status: 400 }
+      );
     }
     
+    // Process and insert contacts
+    const contactsToCreate = [];
+    
+    for (const row of data) {
+      // Map CSV fields to your contact model with length limits
+      const name = (row.name || row.fullname || "").substring(0, 100);
+      const email = (row.email || "").substring(0, 255);
+      const rawPhone = row.phone || row.phonenumber || row.mobile || "";
+      const group = (row.group || row.category || "General").substring(0, 50);
+      
+      // Skip empty rows
+      if (!name && !rawPhone) {
+        continue;
+      }
+
+      // Normalize phone number: remove non-digits and prepend '+'
+      const normalizedPhone = `+${rawPhone.replace(/\D/g, "")}`.substring(0, 50);
+      
+      contactsToCreate.push({
+        name,
+        email: email || null,
+        phoneNumber: normalizedPhone,
+        group
+      });
+    }
+
+    if (contactsToCreate.length === 0) {
+      return NextResponse.json(
+        { error: "No valid contacts found in CSV" },
+        { status: 400 }
+      );
+    }
+
+    // Use createMany for better performance and to respect the row limit
+    const result = await prisma.contact.createMany({
+      data: contactsToCreate
+    });
+    
     return NextResponse.json({
-      message: `Successfully imported ${createdContacts.length} contacts`,
-      count: createdContacts.length
+      message: `Successfully imported ${result.count} contacts`,
+      count: result.count
     });
     
   } catch (error) {
