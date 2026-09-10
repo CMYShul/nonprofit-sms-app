@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit file size to 1MB to prevent DoS attacks
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds limit (1MB)" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,25 +50,40 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit max contacts per import to 100 to prevent DoS and resource exhaustion
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Exceeded maximum limit of 100 contacts per import" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
     
     for (const row of data) {
-      // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
+      // Input sanitization and length limits
+      const name = (row.name || row.fullname || "").slice(0, 100);
+      const email = (row.email || "").slice(0, 255);
+      const rawPhone = row.phone || row.phonenumber || row.mobile || "";
+      const digitsOnly = rawPhone.replace(/\D/g, "").slice(0, 50);
+      const group = (row.group || row.category || "General").slice(0, 50);
       
-      // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      // Skip rows missing required name or phone number
+      if (!name || !digitsOnly) {
         continue;
       }
+
+      const normalizedPhone = `+${digitsOnly}`;
+
+      // Note: userId is omitted because Contact model in prisma/schema.prisma does not have a userId field
+      const contact = {
+        name,
+        email: email || null,
+        phoneNumber: normalizedPhone,
+        group
+      };
       
       // Create contact in database
       const createdContact = await prisma.contact.create({
