@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit file size to 1MB to prevent memory exhaustion / DoS
+    if (file.size > 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds 1MB limit" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,25 +50,37 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Limit imported rows to prevent DoS / resource exhaustion
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "Import limit exceeded (max 100 contacts)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
     
     for (const row of data) {
-      // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
+      const rawName = (row.name || row.fullname || "").trim();
+      const rawPhone = (row.phone || row.phonenumber || row.mobile || "").trim();
       
       // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      if (!rawName && !rawPhone) {
         continue;
       }
+
+      const digits = rawPhone.replace(/\D/g, "");
+      const formattedPhone = digits ? `+${digits}`.slice(0, 50) : "";
+
+      // Truncate fields to prevent memory bloat or database errors
+      const contact = {
+        name: rawName.slice(0, 100),
+        email: (row.email || "").trim().slice(0, 255) || null,
+        phoneNumber: formattedPhone,
+        group: (row.group || row.category || "General").trim().slice(0, 50)
+      };
       
       // Create contact in database
       const createdContact = await prisma.contact.create({
