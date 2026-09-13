@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { parse } from "papaparse";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -25,6 +25,14 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Security check: Limit CSV file size to 1MB to prevent Denial of Service (DoS) via large uploads
+    if (file.size > 1 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "File size exceeds 1MB limit" },
+        { status: 400 }
+      );
+    }
     
     // Read the file as text
     const csvText = await file.text();
@@ -42,25 +50,39 @@ export async function POST(request) {
         { status: 400 }
       );
     }
+
+    // Security check: Limit total rows to 100 to prevent resource exhaustion and DoS
+    if (data.length > 100) {
+      return NextResponse.json(
+        { error: "CSV contains too many rows (max 100 rows per import)" },
+        { status: 400 }
+      );
+    }
     
     // Process and insert contacts
     const createdContacts = [];
     
     for (const row of data) {
-      // Map CSV fields to your contact model
-      // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
-      
+      const rawName = String(row.name || row.fullname || "").trim();
+      const rawPhone = String(row.phone || row.phonenumber || row.mobile || "").trim();
+      const rawEmail = String(row.email || "").trim();
+      const rawGroup = String(row.group || row.category || "General").trim();
+
       // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      if (!rawName && !rawPhone) {
         continue;
       }
+
+      // Input sanitization & normalization to protect database integrity and handle DoS
+      const normalizedDigits = rawPhone.replace(/\D/g, "");
+      const formattedPhone = normalizedDigits ? `+${normalizedDigits}` : "";
+
+      const contact = {
+        name: rawName.slice(0, 100),
+        phoneNumber: formattedPhone.slice(0, 50),
+        email: rawEmail ? rawEmail.slice(0, 255) : null,
+        group: rawGroup ? rawGroup.slice(0, 50) : "General"
+      };
       
       // Create contact in database
       const createdContact = await prisma.contact.create({
