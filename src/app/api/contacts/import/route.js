@@ -49,18 +49,26 @@ export async function POST(request) {
     for (const row of data) {
       // Map CSV fields to your contact model
       // Adjust field names based on your CSV structure
-      const contact = {
-        name: row.name || row.fullname || "",
-        email: row.email || "",
-        phoneNumber: row.phone || row.phonenumber || row.mobile || "",
-        group: row.group || row.category || "General",
-        userId: session.user.id
-      };
-      
+      const rawName = (row.name || row.fullname || "").trim().slice(0, 100);
+      const rawEmail = (row.email || "").trim().slice(0, 255);
+      const rawPhone = (row.phone || row.phonenumber || row.mobile || "").trim();
+      const rawGroup = (row.group || row.category || "General").trim().slice(0, 50);
+
       // Skip empty rows
-      if (!contact.name && !contact.phoneNumber) {
+      if (!rawName && !rawPhone) {
         continue;
       }
+
+      // Normalize phone number format
+      const digits = rawPhone.replace(/\D/g, "");
+      const normalizedPhone = digits ? `+${digits}`.slice(0, 50) : "";
+
+      const contact = {
+        name: rawName,
+        email: rawEmail || null,
+        phoneNumber: normalizedPhone,
+        group: rawGroup || "General"
+      };
       
       // Create contact in database
       const createdContact = await prisma.contact.create({
