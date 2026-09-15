@@ -41,10 +41,10 @@ export async function POST(request) {
     
     const contact = await prisma.contact.create({
       data: {
-        name,
-        phoneNumber: normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`,
-        email: email || null,
-        group: group || "Default"
+        name: typeof name === "string" ? name.slice(0, 100) : "",
+        phoneNumber: (normalizedPhone.startsWith("+") ? normalizedPhone : `+${normalizedPhone}`).slice(0, 50),
+        email: typeof email === "string" ? email.slice(0, 255) : null,
+        group: typeof group === "string" ? group.slice(0, 50) : "Default"
       }
     });
     
