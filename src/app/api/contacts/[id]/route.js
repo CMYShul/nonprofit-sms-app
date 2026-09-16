@@ -12,7 +12,7 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const contact = await prisma.contact.findUnique({
@@ -38,7 +38,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     const { name, phoneNumber, email, group } = await request.json();
@@ -47,6 +47,11 @@ export async function PUT(request, { params }) {
       return NextResponse.json({ error: "Name and phone number are required" }, { status: 400 });
     }
     
+    // Validate input field lengths to prevent DoS or database field overflow
+    if (name.length > 100 || phoneNumber.length > 50 || (email && email.length > 255) || (group && group.length > 50)) {
+      return NextResponse.json({ error: "Input field length exceeds limit" }, { status: 400 });
+    }
+
     // Normalize phone number format
     const normalizedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber.replace(/\D/g, "")}`;
     
@@ -80,7 +85,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   
-  const { id } = params;
+  const { id } = await params;
   
   try {
     await prisma.contact.delete({
